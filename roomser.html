@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Room Reservation</title>
+</head>
+<body>
+    <h2>Room Reservation Form</h2>
+    <form action="reserve" method="post">
+        Name: <input type="text" name="name" required><br><br>
+        Age: <input type="number" name="age" required><br><br>
+        Number of People: <input type="number" name="numPeople" required><br><br>
+        Check-In Date: <input type="date" name="checkIn" required><br><br>
+        Check-Out Date: <input type="date" name="checkOut" required><br><br>
+        Mobile: <input type="text" name="mobile" pattern="[0-9]{10}" required><br><br>
+        <input type="submit" value="Book Room">
+    </form>
+</body>
+</html>
+Bean.java
+package pack;
+import java.sql.*;
+
+public class Bean {
+    private static final String URL = "jdbc:derby://localhost:1527/Room";
+    private static final String USER = "Mayu";
+    private static final String PASS = "Mayu";
+
+    public boolean saveReservation(String name, int age, int numPeople, String checkIn, String checkOut, String mobile) {
+        String sql = "INSERT INTO ROOMS (NAME, AGE, NUMPEOPLE, CHECKIN, CHECKOUT, MOBILE) VALUES (?, ?, ?, ?, ?, ?)";
+        try {
+            Class.forName("org.apache.derby.jdbc.ClientDriver");
+            Connection con = DriverManager.getConnection(URL, USER, PASS);
+            PreparedStatement ps = con.prepareStatement(sql);
+            ps.setString(1, name);
+            ps.setInt(2, age);
+            ps.setInt(3, numPeople);
+            ps.setString(4, checkIn);
+            ps.setString(5, checkOut);
+            ps.setString(6, mobile);
+            int i = ps.executeUpdate();
+            con.close();
+            return i > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+}
+Servlet
+package pack;
+import java.io.*;
+import javax.servlet.*;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.*;
+
+@WebServlet("/reserve")
+public class CodeLogic extends HttpServlet {
+    protected void doPost(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
+
+        String name = req.getParameter("name");
+        int age = Integer.parseInt(req.getParameter("age"));
+        int numPeople = Integer.parseInt(req.getParameter("numPeople"));
+        String checkIn = req.getParameter("checkIn");
+        String checkOut = req.getParameter("checkOut");
+        String mobile = req.getParameter("mobile");
+
+        Bean bean = new Bean();
+        boolean saved = bean.saveReservation(name, age, numPeople, checkIn, checkOut, mobile);
+
+        res.setContentType("text/html");
+        PrintWriter out = res.getWriter();
+
+        out.println("<h2>Booking Status</h2>");
+        if (saved) {
+            out.println("<p>Booking Successful!</p>");
+            out.println("<p>Name: " + name + "</p>");
+            out.println("<p>Age: " + age + "</p>");
+            out.println("<p>Guests: " + numPeople + "</p>");
+            out.println("<p>Check-In: " + checkIn + "</p>");
+            out.println("<p>Check-Out: " + checkOut + "</p>");
+            out.println("<p>Mobile: " + mobile + "</p>");
+        } else {
+            out.println("<p>Booking Failed! Please try again.</p>");
+        }
+    }
+}
