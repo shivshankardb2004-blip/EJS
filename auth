@@ -1,0 +1,143 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Registration</title>
+    <meta charset="UTF-8" />
+</head>
+<body>
+    <h2>User Registration Form</h2>
+    <form method="post" action="newjsp1.jsp">
+        Username: <input type="text" name="username" required><br><br>
+        Password: <input type="password" name="password" required><br><br>
+        Gender:
+        <input type="radio" name="gender" value="male" required> Male
+        <input type="radio" name="gender" value="female"> Female
+        <input type="radio" name="gender" value="other"> Other<br><br>
+        Hobbies:<br>
+        <input type="checkbox" name="hobbies" value="Reading"> Reading
+        <input type="checkbox" name="hobbies" value="Traveling"> Traveling
+        <input type="checkbox" name="hobbies" value="Gaming"> Gaming
+        <input type="checkbox" name="hobbies" value="Cooking"> Cooking<br><br>
+        <input type="submit" value="Register">
+    </form>
+</body>
+</html>
+
+
+<%@ page import="java.sql.*" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registration Save</title>
+</head>
+<body>
+<%
+    String username = request.getParameter("username");
+    String password = request.getParameter("password");
+    String gender = request.getParameter("gender");
+    String[] hobbiesArr = request.getParameterValues("hobbies");
+
+    if (username != null && password != null && gender != null) {
+        Connection con = null;
+        Statement st = null;
+
+        try {
+            Class.forName("org.apache.derby.jdbc.ClientDriver");
+            con = DriverManager.getConnection("jdbc:derby://localhost:1527/demo", "demo", "demo");
+            st = con.createStatement();
+
+            String hobbies = "";
+            if (hobbiesArr != null)
+                hobbies = String.join(", ", hobbiesArr);
+
+            String sql = "INSERT INTO students (Username, Password, Gender, Hobbies) VALUES ('"
+                        + username + "', '" + password + "', '" + gender + "', '" + hobbies + "')";
+
+            int result = st.executeUpdate(sql);
+
+            if (result > 0) {
+                out.println("<h2>Record inserted successfully!</h2>");
+            } else {
+                out.println("<h2>Failed to insert record.</h2>");
+            }
+
+        } catch (Exception e) {
+            out.println("<h2>Error: " + e.getMessage() + "</h2>");
+        } finally {
+            try { if (st != null) st.close(); } catch (SQLException e) {}
+            try { if (con != null) con.close(); } catch (SQLException e) {}
+        }
+    } else {
+        out.println("<h2>Please fill all required fields.</h2>");
+    }
+%>
+<a href="newjsp2.jsp">Click here to login</a>
+</body>
+</html>
+
+
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form method="post" action="newjsp3.jsp">
+        Username: <input type="text" name="username" required><br><br>
+        Password: <input type="password" name="password" required><br><br>
+        <input type="submit" value="Login">
+    </form>
+</body>
+</html>
+
+
+<%@ page import="java.sql.*" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Validation</title>
+</head>
+<body>
+<%
+    String username = request.getParameter("username");
+    String password = request.getParameter("password");
+
+    if (username != null && !username.trim().isEmpty() && password != null && !password.trim().isEmpty()) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            Class.forName("org.apache.derby.jdbc.ClientDriver");
+            con = DriverManager.getConnection("jdbc:derby://localhost:1527/demo", "demo", "demo");
+            String sql = "SELECT * FROM students WHERE username=? AND password=?";
+            ps = con.prepareStatement(sql);
+            ps.setString(1, username);
+            ps.setString(2, password);
+
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                out.println("<h2>Login successful. Welcome, " + username + "!</h2>");
+            } else {
+                out.println("<h2>Login failed. Invalid username or password.</h2>");
+            }
+
+        } catch (Exception e) {
+            out.println("<h2>Error: " + e.getMessage() + "</h2>");
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (ps != null) ps.close(); } catch (SQLException e) {}
+            try { if (con != null) con.close(); } catch (SQLException e) {}
+        }
+    } else {
+        out.println("<h2>Please enter both username and password.</h2>");
+    }
+%>
+</body>
+</html>
